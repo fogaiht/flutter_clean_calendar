@@ -75,7 +75,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: <Widget>[
             Container(
               child: Calendar(
-                startOnMonday: true,
                 weekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
                 events: _events,
                 onRangeSelected: (range) =>

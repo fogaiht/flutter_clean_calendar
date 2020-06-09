@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:date_utils/date_utils.dart';
+import 'package:flutter/material.dart';
 import "package:intl/intl.dart";
 
 class CalendarTile extends StatelessWidget {
@@ -15,6 +15,9 @@ class CalendarTile extends StatelessWidget {
   final Widget child;
   final Color selectedColor;
   final Color todayColor;
+  final Color dayColor;
+  final Color todayBackgroundColor;
+  final Color outMonthDayColor;
   final Color eventColor;
   final Color eventDoneColor;
 
@@ -25,22 +28,25 @@ class CalendarTile extends StatelessWidget {
     this.dateStyles,
     this.dayOfWeek,
     this.dayOfWeekStyle,
-    this.isDayOfWeek: false,
-    this.isSelected: false,
-    this.inMonth: true,
+    this.isDayOfWeek = false,
+    this.isSelected = false,
+    this.inMonth = true,
     this.events,
     this.selectedColor,
     this.todayColor,
     this.eventColor,
     this.eventDoneColor,
+    this.todayBackgroundColor,
+    this.outMonthDayColor,
+    this.dayColor,
   });
 
   Widget renderDateOrDayOfWeek(BuildContext context) {
     if (isDayOfWeek) {
-      return new InkWell(
-        child: new Container(
+      return InkWell(
+        child: Container(
           alignment: Alignment.center,
-          child: new Text(
+          child: Text(
             dayOfWeek,
             style: dayOfWeekStyle,
           ),
@@ -57,8 +63,10 @@ class CalendarTile extends StatelessWidget {
                 ? BoxDecoration(
                     shape: BoxShape.circle,
                     color: selectedColor != null
-                        ? Utils.isSameDay(this.date, DateTime.now())
-                            ? Colors.red
+                        ? Utils.isSameDay(date, DateTime.now())
+                            ? todayBackgroundColor == null
+                                ? Colors.transparent
+                                : todayBackgroundColor
                             : selectedColor
                         : Theme.of(context).primaryColor,
                   )
@@ -70,13 +78,14 @@ class CalendarTile extends StatelessWidget {
                 Text(
                   DateFormat("d").format(date),
                   style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w400,
-                      color: isSelected
-                          ? Colors.white
-                          : Utils.isSameDay(this.date, DateTime.now())
-                              ? todayColor
-                              : inMonth ? Colors.black : Colors.grey),
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.w400,
+                    color: isSelected
+                        ? Colors.white
+                        : Utils.isSameDay(date, DateTime.now())
+                            ? todayColor
+                            : inMonth ? dayColor : outMonthDayColor,
+                  ),
                 ),
                 events != null && events.length > 0
                     ? Row(
@@ -90,12 +99,9 @@ class CalendarTile extends StatelessWidget {
                             width: 5.0,
                             height: 5.0,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: event["isDone"]
-                                  ? eventDoneColor ??
-                                      Theme.of(context).primaryColor
-                                  : eventColor ?? Theme.of(context).accentColor,
-                            ),
+                                shape: BoxShape.circle,
+                                color:
+                                    isSelected ? Colors.white : eventDoneColor),
                           );
                         }).toList())
                     : Container(),
@@ -110,12 +116,12 @@ class CalendarTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (child != null) {
-      return new InkWell(
+      return InkWell(
         child: child,
         onTap: onDateSelected,
       );
     }
-    return new Container(
+    return Container(
       child: renderDateOrDayOfWeek(context),
     );
   }

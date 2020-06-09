@@ -1,13 +1,14 @@
 library flutter_clean_calendar;
 
-import 'package:flutter/material.dart';
 import 'package:date_utils/date_utils.dart';
-import './simple_gesture_detector.dart';
-import './calendar_tile.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
-typedef DayBuilder(BuildContext context, DateTime day);
+import './calendar_tile.dart';
+import './simple_gesture_detector.dart';
+
+typedef DayBuilder = Widget Function(BuildContext context, DateTime day);
 
 class Range {
   final DateTime from;
@@ -22,17 +23,21 @@ class Calendar extends StatefulWidget {
   final bool isExpandable;
   final DayBuilder dayBuilder;
   final bool hideArrows;
-  final bool hideTodayIcon;
-  final Map<DateTime, List> events;
+  final bool hideTodayButton;
+  final String fullDateText;
+  final Map<DateTime, List<dynamic>> events;
   final Color selectedColor;
   final Color todayColor;
+  final Color todayButtonTextColor;
+  final Color dayColor;
+  final Color todayBackgroundColor;
   final Color eventColor;
   final Color eventDoneColor;
+  final Color outMonthDayColor;
   final DateTime initialDate;
   final bool isExpanded;
   final List<String> weekDays;
   final String locale;
-  final bool startOnMonday;
   final bool hideBottomBar;
   final TextStyle dayOfWeekStyle;
   final TextStyle bottomBarTextStyle;
@@ -43,25 +48,29 @@ class Calendar extends StatefulWidget {
     this.onMonthChanged,
     this.onDateSelected,
     this.onRangeSelected,
-    this.hideBottomBar: false,
-    this.isExpandable: false,
+    this.hideBottomBar = false,
+    this.isExpandable = false,
     this.events,
     this.dayBuilder,
-    this.hideTodayIcon: false,
-    this.hideArrows: false,
+    this.hideTodayButton = false,
+    this.hideArrows = false,
     this.selectedColor,
     this.todayColor,
+    this.todayBackgroundColor,
+    this.outMonthDayColor,
     this.eventColor,
     this.eventDoneColor,
     this.initialDate,
     this.isExpanded = false,
     this.weekDays = const ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     this.locale = "en_US",
-    this.startOnMonday = false,
     this.dayOfWeekStyle,
     this.bottomBarTextStyle,
     this.bottomBarArrowColor,
     this.bottomBarColor,
+    this.fullDateText,
+    this.dayColor,
+    this.todayButtonTextColor,
   });
 
   @override
@@ -94,8 +103,52 @@ class _CalendarState extends State<Calendar> {
         }));
   }
 
-  Widget get nameAndIconRow {
-    var todayIcon;
+  Widget get fullDayAndTodayBtn {
+    var todayButton;
+    if (!widget.hideTodayButton) {
+      todayButton = Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10),
+        child: InkWell(
+          child: Container(
+            decoration: BoxDecoration(
+                color: widget.selectedColor,
+                borderRadius: BorderRadius.circular(10)),
+            padding: EdgeInsets.all(10),
+            child: Text(
+              'Hoje',
+              style: TextStyle(
+                color: widget.todayButtonTextColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          onTap: resetToToday,
+        ),
+      );
+    } else {
+      todayButton = SizedBox();
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Container(
+          padding:
+              EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0, bottom: 10),
+          child: Text(
+            widget.fullDateText ?? "",
+            style: TextStyle(
+              color: widget.eventDoneColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18.0,
+            ),
+          ),
+        ),
+        todayButton
+      ],
+    );
+  }
+
+  Widget get changeMonthArrows {
     var leftArrow;
     var rightArrow;
 
@@ -109,26 +162,16 @@ class _CalendarState extends State<Calendar> {
         icon: Icon(Icons.chevron_right),
       );
     } else {
-      leftArrow = Container();
-      rightArrow = Container();
-    }
-
-    if (!widget.hideTodayIcon) {
-      todayIcon = InkWell(
-        child: Text('Today'),
-        onTap: resetToToday,
-      );
-    } else {
-      todayIcon = Container();
+      leftArrow = SizedBox();
+      rightArrow = SizedBox();
     }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        leftArrow ?? Container(),
+        leftArrow ?? SizedBox(),
         Column(
           children: <Widget>[
-            todayIcon ?? Container(),
             Text(
               displayMonth,
               style: TextStyle(
@@ -137,7 +180,7 @@ class _CalendarState extends State<Calendar> {
             ),
           ],
         ),
-        rightArrow ?? Container(),
+        rightArrow ?? SizedBox(),
       ],
     );
   }
@@ -178,8 +221,11 @@ class _CalendarState extends State<Calendar> {
           CalendarTile(
             selectedColor: widget.selectedColor,
             todayColor: widget.todayColor,
+            dayColor: widget.dayColor,
+            todayBackgroundColor: widget.todayBackgroundColor,
             eventColor: widget.eventColor,
             eventDoneColor: widget.eventDoneColor,
+            outMonthDayColor: widget.outMonthDayColor,
             events: widget.events[day],
             isDayOfWeek: true,
             dayOfWeek: day,
@@ -201,7 +247,7 @@ class _CalendarState extends State<Calendar> {
       (day) {
         if (day.hour > 0) {
           day = day.toLocal();
-          day = day.subtract(new Duration(hours: day.hour));
+          day = day.subtract(Duration(hours: day.hour));
         }
 
         if (monthStarted && day.day == 01) {
@@ -212,15 +258,18 @@ class _CalendarState extends State<Calendar> {
           monthStarted = true;
         }
 
-        if (this.widget.dayBuilder != null) {
+        if (widget.dayBuilder != null) {
           dayWidgets.add(
             CalendarTile(
               selectedColor: widget.selectedColor,
               todayColor: widget.todayColor,
+              dayColor: widget.dayColor,
+              todayBackgroundColor: widget.todayBackgroundColor,
+              outMonthDayColor: widget.outMonthDayColor,
               eventColor: widget.eventColor,
               eventDoneColor: widget.eventDoneColor,
               events: widget.events[day],
-              child: this.widget.dayBuilder(context, day),
+              child: widget.dayBuilder(context, day),
               date: day,
               onDateSelected: () => handleSelectedDateAndUserCallback(day),
             ),
@@ -230,6 +279,9 @@ class _CalendarState extends State<Calendar> {
             CalendarTile(
                 selectedColor: widget.selectedColor,
                 todayColor: widget.todayColor,
+                dayColor: widget.dayColor,
+                todayBackgroundColor: widget.todayBackgroundColor,
+                outMonthDayColor: widget.outMonthDayColor,
                 eventColor: widget.eventColor,
                 eventDoneColor: widget.eventDoneColor,
                 events: widget.events[day],
@@ -247,7 +299,7 @@ class _CalendarState extends State<Calendar> {
 
   TextStyle configureDateStyle(monthStarted, monthEnded) {
     TextStyle dateStyles;
-    final TextStyle body1Style = Theme.of(context).textTheme.body1;
+    final TextStyle body1Style = Theme.of(context).textTheme.bodyText1;
 
     if (isExpanded) {
       final TextStyle body1StyleDisabled = body1Style.copyWith(
@@ -302,7 +354,7 @@ class _CalendarState extends State<Calendar> {
         ),
       );
     } else {
-      return Container();
+      return SizedBox();
     }
   }
 
@@ -313,19 +365,21 @@ class _CalendarState extends State<Calendar> {
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          nameAndIconRow,
+          changeMonthArrows,
           ExpansionCrossFade(
             collapsed: calendarGridView,
             expanded: calendarGridView,
             isExpanded: isExpanded,
           ),
-          expansionButtonRow
+          fullDayAndTodayBtn,
+          expansionButtonRow,
         ],
       ),
     );
   }
 
   void resetToToday() {
+    var selectedDay = _selectedDate;
     _selectedDate = DateTime.now();
     var firstDayOfCurrentWeek = _firstDayOfWeek(_selectedDate);
     var lastDayOfCurrentWeek = _lastDayOfWeek(_selectedDate);
@@ -340,6 +394,10 @@ class _CalendarState extends State<Calendar> {
       displayMonth =
           "${monthFormat[0].toUpperCase()}${monthFormat.substring(1)}";
     });
+
+    if (selectedDay.month != _selectedDate.month) {
+      widget.onMonthChanged(_selectedDate);
+    }
 
     _launchDateSelectionCallback(_selectedDate);
   }
@@ -356,7 +414,9 @@ class _CalendarState extends State<Calendar> {
       displayMonth =
           "${monthFormat[0].toUpperCase()}${monthFormat.substring(1)}";
     });
-    _launchDateSelectionCallback(_selectedDate);
+    widget.onMonthChanged(_selectedDate);
+    widget.onDateSelected(_selectedDate);
+    // _launchDateSelectionCallback(_selectedDate);
   }
 
   void previousMonth() {
@@ -371,7 +431,9 @@ class _CalendarState extends State<Calendar> {
       displayMonth =
           "${monthFormat[0].toUpperCase()}${monthFormat.substring(1)}";
     });
-    _launchDateSelectionCallback(_selectedDate);
+    widget.onMonthChanged(_selectedDate);
+    widget.onDateSelected(_selectedDate);
+    // _launchDateSelectionCallback(_selectedDate);
   }
 
   void nextWeek() {
@@ -468,26 +530,25 @@ class _CalendarState extends State<Calendar> {
     if (widget.onDateSelected != null) {
       widget.onDateSelected(day);
     }
-    if (widget.onMonthChanged != null) {
-      widget.onMonthChanged(day);
-    }
+    // if (widget.onMonthChanged != null) {
+    //   widget.onMonthChanged(day);
+    // }
   }
 
   _firstDayOfWeek(DateTime date) {
-    var day = new DateTime.utc(
+    var day = DateTime.utc(
         _selectedDate.year, _selectedDate.month, _selectedDate.day, 12);
-    return day.subtract(
-        new Duration(days: day.weekday - (widget.startOnMonday ? 1 : 0)));
+    return day.subtract(Duration(days: day.weekday));
   }
 
   _lastDayOfWeek(DateTime date) {
-    return _firstDayOfWeek(date).add(new Duration(days: 7));
+    return _firstDayOfWeek(date).add(Duration(days: 7));
   }
 
   List<DateTime> _daysInMonth(DateTime month) {
     var first = Utils.firstDayOfMonth(month);
     var daysBefore = first.weekday;
-    var firstToDisplay = first.subtract(new Duration(days: daysBefore - 1));
+    var firstToDisplay = first.subtract(Duration(days: daysBefore));
     var last = Utils.lastDayOfMonth(month);
 
     var daysAfter = 7 - last.weekday;
@@ -497,7 +558,7 @@ class _CalendarState extends State<Calendar> {
       daysAfter = 7;
     }
 
-    var lastToDisplay = last.add(new Duration(days: daysAfter));
+    var lastToDisplay = last.add(Duration(days: daysAfter));
     return Utils.daysInRange(firstToDisplay, lastToDisplay).toList();
   }
 }
