@@ -1,3 +1,5 @@
+_This is a forked package from @pmcarlos_
+
 # flutter_clean_calendar
 
 Simple flutter calendar based on flutter_calendar package.
