@@ -28,6 +28,7 @@ class Calendar extends StatefulWidget {
   final Map<DateTime, List<dynamic>> events;
   final Color selectedColor;
   final Color todayColor;
+  final Color monthTextColor;
   final Color todayButtonTextColor;
   final Color dayColor;
   final Color todayBackgroundColor;
@@ -45,33 +46,35 @@ class Calendar extends StatefulWidget {
   final Color bottomBarColor;
 
   Calendar({
-    this.onMonthChanged,
+    Key key,
     this.onDateSelected,
+    this.onMonthChanged,
     this.onRangeSelected,
-    this.hideBottomBar = false,
     this.isExpandable = false,
-    this.events,
     this.dayBuilder,
-    this.hideTodayButton = false,
     this.hideArrows = false,
+    this.hideTodayButton = false,
+    this.fullDateText,
+    this.events,
     this.selectedColor,
     this.todayColor,
+    this.monthTextColor,
+    this.todayButtonTextColor,
+    this.dayColor,
     this.todayBackgroundColor,
-    this.outMonthDayColor,
     this.eventColor,
     this.eventDoneColor,
+    this.outMonthDayColor,
     this.initialDate,
     this.isExpanded = false,
     this.weekDays = const ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     this.locale = "en_US",
+    this.hideBottomBar = false,
     this.dayOfWeekStyle,
     this.bottomBarTextStyle,
     this.bottomBarArrowColor,
     this.bottomBarColor,
-    this.fullDateText,
-    this.dayColor,
-    this.todayButtonTextColor,
-  });
+  }) : super(key: key);
 
   @override
   _CalendarState createState() => _CalendarState();
@@ -176,6 +179,7 @@ class _CalendarState extends State<Calendar> {
               displayMonth,
               style: TextStyle(
                 fontSize: 20.0,
+                color: widget.monthTextColor
               ),
             ),
           ],
