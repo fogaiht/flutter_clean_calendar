@@ -158,11 +158,11 @@ class _CalendarState extends State<Calendar> {
     if (!widget.hideArrows) {
       leftArrow = IconButton(
         onPressed: isExpanded ? previousMonth : previousWeek,
-        icon: Icon(Icons.chevron_left),
+        icon: Icon(Icons.chevron_left, color: widget.monthTextColor),
       );
       rightArrow = IconButton(
         onPressed: isExpanded ? nextMonth : nextWeek,
-        icon: Icon(Icons.chevron_right),
+        icon: Icon(Icons.chevron_right, color: widget.monthTextColor),
       );
     } else {
       leftArrow = SizedBox();
